@@ -6,7 +6,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Install production dependencies without running composer scripts
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress --no-scripts --ignore-platform-req=php
 
 # Copy application source (excluding vendor/node_modules at build context level)
 COPY artisan ./
@@ -19,7 +19,6 @@ COPY public ./public
 COPY resources ./resources
 COPY routes ./routes
 COPY storage ./storage
-COPY .env.example ./.env.example
 RUN rm -rf public/build && rm -f public/hot
 
 FROM node:20-alpine AS assets
@@ -41,11 +40,14 @@ RUN apk add --no-cache bash libpq \
 
 COPY --from=vendor /var/www/html ./
 COPY --from=assets /var/www/html/public/build ./public/build
+COPY docker/app/entrypoint.sh /usr/local/bin/app-entrypoint.sh
+RUN chmod +x /usr/local/bin/app-entrypoint.sh
 
 RUN chown -R www-data:www-data storage bootstrap/cache public/build \
     && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 9000
+ENTRYPOINT ["/usr/local/bin/app-entrypoint.sh"]
 CMD ["php-fpm"]
 
 FROM nginx:1.27-alpine AS web

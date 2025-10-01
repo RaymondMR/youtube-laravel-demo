@@ -1,4 +1,4 @@
-version: "3.9"
+# version: "3.9"
 
 services:
   app:
@@ -15,6 +15,7 @@ services:
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_URL: ${APP_URL:-http://localhost}
       DB_HOST: db
+      RUN_MIGRATIONS_ON_BOOT: ${RUN_MIGRATIONS_ON_BOOT:-false}
     volumes:
       - storage:/var/www/html/storage
       - bootstrap_cache:/var/www/html/bootstrap/cache

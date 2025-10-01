@@ -1,4 +1,65 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# youtube-laravel-demo
+
+This project ships with a Docker-based production stack (PHP-FPM + Nginx + PostgreSQL) and prebuilt assets. Use the steps below to build, run, and verify the containers locally.
+
+## Prerequisites
+- Docker Desktop (Docker Engine 24+ and Compose v2)
+- Node 20+ (only if you need to rebuild frontend assets outside the container)
+- Access to a PostgreSQL database or the bundled container credentials (see `.env.docker`).
+
+## 1. Configure environment
+1. Copy `.env.docker` if you need a custom variant and update:
+   - `DB_USERNAME` / `DB_PASSWORD` to match the Postgres user you intend to use
+   - `DB_DATABASE` to the name of the database (defaults to `youtube_database`)
+   - `APP_KEY` (run `php artisan key:generate --show` locally or inside a container and paste the value)
+2. Optional: set `RUN_MIGRATIONS_ON_BOOT=true` if you want the app container to retry migrations on every restart.
+
+## 2. Build images
+```bash
+docker compose build
+```
+This compiles Composer dependencies, builds Vite/Tailwind assets, and produces two images:
+- `youtube-laravel-demo-app` (php-fpm)
+- `youtube-laravel-demo-web` (nginx)
+
+## 3. Start the stack
+```bash
+docker compose up -d
+```
+The first boot of the Postgres container seeds the `youtube_database` database. The PHP entrypoint (`docker/app/entrypoint.sh`) recreates `storage/` directories, fixes permissions, and optionally runs migrations if the toggle is enabled.
+
+## 4. Run database migrations
+If you did not enable automatic migrations, run them manually:
+```bash
+docker compose exec app php artisan migrate --force
+```
+
+## 5. Verify the deployment
+- Application health:
+  ```bash
+  curl -I http://localhost:8080/
+  ```
+  Expect `HTTP/1.1 200 OK`.
+- Container logs:
+  ```bash
+  docker compose logs app
+  docker compose logs web
+  ```
+- Database connectivity (inside the DB container):
+  ```bash
+  docker compose exec db psql -U rmr_admin01 -d youtube_database
+  ```
+
+## 6. Stopping and cleaning up
+```bash
+docker compose down               # stop containers, keep volumes
+# or
+docker compose down -v             # remove containers, network, and volumes
+```
+
+When volumes are removed, the next `docker compose up` rebuilds storage paths automatically through the entrypoint hook.
+
+---<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
@@ -64,3 +125,5 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
